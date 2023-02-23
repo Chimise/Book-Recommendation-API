@@ -34,12 +34,22 @@ class UserSuggestion {
     }
 
     static async fetchByUser(data: Pick<User, 'id'>) {
-        const suggestedBooks: BookSchema[] = await knex<UserSuggestionSchema>(this.db).join('books', `${this.db}.book_id`, 'books.id').select('books.*').where(`${this.db}.user_id`, data.id);
+        const suggestedBooks: BookSchema[] = await knex<UserSuggestionSchema>(this.db).join('books', `${this.db}.book_id`, 'books.id').select('books.*', `${this.db}.weight`).where(`${this.db}.user_id`, data.id).orderBy(`${this.db}.weight`, 'desc');
         if(_.isEmpty(suggestedBooks)) {
             return [];
         }
-        return _.map(suggestedBooks, book => new Book(book));
+        // Add avg_rating to the books suggested to the user
+        const promiseBooks =  _.map(suggestedBooks, (suggestedBook) => {
+            return new Promise<Book>((res, rej) => {
+                const book =  new Book(suggestedBook)
+                book.getAvgRating().then(() => res(book)
+                ).catch((err) => rej(err));
+            })
+        });
+
+        return Promise.all(promiseBooks);
     }
+
 
 
 }

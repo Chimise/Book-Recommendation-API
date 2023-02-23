@@ -5,6 +5,7 @@ import { Knex } from "knex";
 import Author from "./Author.model";
 import knex from "../util/knex";
 import _ from "lodash";
+import UserBookSchema from "../interfaces/user_book.interface";
 
 class Book {
   id: number;
@@ -15,6 +16,7 @@ class Book {
   identifier: string;
   created_at: string;
   updated_at: string;
+  avg_rating!: number;
   authors: Author[]
 
   constructor({
@@ -24,6 +26,7 @@ class Book {
     cover_image,
     title,
     identifier,
+    avg_rating,
     created_at,
     updated_at,
   }: BookSchema) {
@@ -36,6 +39,10 @@ class Book {
     this.created_at = created_at;
     this.updated_at = updated_at;
     this.authors = [];
+
+    if(avg_rating) {
+      this.avg_rating = parseInt(avg_rating.toString(), 10);
+    }
   }
 
   async save(...args: (keyof BookSchema)[]) {
@@ -59,6 +66,55 @@ class Book {
     this.authors = authors.map(author => new Author(author));
     return this.authors;
   }
+
+  async getAvgRating() {
+    //@ts-ignore
+    const avgRating: Array<{avg_rating: number}> = await knex<BookSchema>('books').select(knex.raw(`COALESCE(SUM(case 
+      WHEN "user_books"."rating" = 0 THEN "user_books"."rating" * 0
+      WHEN "user_books"."rating" = 1 THEN "user_books"."rating"
+      WHEN "user_books"."rating" = 2 THEN "user_books"."rating" * 2
+      WHEN "user_books"."rating" = 3 THEN "user_books"."rating" * 3
+      WHEN "user_books"."rating" = 4 THEN "user_books"."rating" * 4
+      WHEN "user_books"."rating" = 5 THEN "user_books"."rating" * 5
+      end) / NULLIF(SUM("user_books"."rating"), 0), 0) AS avg_rating`)
+    ).join<UserBookSchema>('user_books', 'books.id', 'user_books.book_id').where('books.id', this.id)
+
+    if(_.isEmpty(avgRating)) {
+      return;
+    }
+    //@ts-ignore
+    this.avg_rating = parseInt(avgRating[0].avg_rating, 10);
+    return this.avg_rating;
+  }
+
+  
+
+  static async getByAvgRating() {
+    const productsWithRating: Array<BookSchema> = await knex.select("books.id",
+      "books.title",
+      "books.description",
+      "books.publication_year",
+      "books.cover_image",
+      "books.identifier",
+      "books.created_at",
+      "books.updated_at",
+      knex.raw(`COALESCE(SUM(case 
+        WHEN "user_books"."rating" = 0 THEN "user_books"."rating" * 0
+        WHEN "user_books"."rating" = 1 THEN "user_books"."rating"
+        WHEN "user_books"."rating" = 2 THEN "user_books"."rating" * 2
+        WHEN "user_books"."rating" = 3 THEN "user_books"."rating" * 3
+        WHEN "user_books"."rating" = 4 THEN "user_books"."rating" * 4
+        WHEN "user_books"."rating" = 5 THEN "user_books"."rating" * 5
+        end) / NULLIF(SUM("user_books"."rating"), 0), 0) AS avg_rating`)
+      
+      ).from<BookSchema>('books').join<UserBookSchema>('user_books', 'books.id', 'user_books.book_id').groupBy('books.id', 'books.title', 'books.description', 'books.publication_year', 'books.cover_image', 'books.identifier', 'books.created_at', 'books.updated_at').orderBy('avg_rating', 'desc',);
+
+    if(_.isEmpty(productsWithRating)) {
+      return [];
+    }
+    return _.map(productsWithRating, book => new Book(book));
+  }
+  
 
   async addAuthors(authors: Author | Author[]) {
     
@@ -91,6 +147,7 @@ class Book {
     return new this(books[0]);
   }
 
+
   static async fetchAll(data: Partial<Omit<BookSchema, 'created_at'|'updated_at'>>) {
     const books = await knex<BookSchema>('books').select('*').where(data);
     if(_.isEmpty(books)) {
@@ -98,8 +155,6 @@ class Book {
     }
     return _.map(books, book => new this(book));
   }
-
-
 
   static async raw(query: (
     instance: Knex.QueryBuilder<BookSchema, BookSchema[]>
@@ -134,7 +189,6 @@ class Book {
   }
 
   
-
   toJSON() {
     return this;
   }

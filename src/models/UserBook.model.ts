@@ -6,8 +6,6 @@ import User from "./User.model";
 import knex from "../util/knex";
 import _, { lte } from "lodash";
 
-
-
 class UserBook {
   id: number;
   review: string;
@@ -153,6 +151,7 @@ class UserBook {
     return this.book;
   }
 
+
   static async getBooksByUserRating(
     data: Pick<User, "id"> | Pick<User, "id">[],
     ratingType?: "like" | "dislike"
@@ -160,11 +159,23 @@ class UserBook {
     let books: BookSchema[];
     let query = knex<UserBookSchema>("user_books")
       .join<BookSchema>("books", "user_books.book_id", "books.id")
-      .select("books.*");
+      .select(
+        "books.id",
+        "books.title",
+        "books.description",
+        "books.publication_year",
+        "books.cover_image",
+        "books.identifier",
+        "books.created_at",
+        "books.updated_at"
+      );
     if (_.isArray(data)) {
       const userIds = data.map((user) => user.id);
       //@ts-ignore
-      query = query.distinct("books.id").whereIn("user_books.user_id", userIds);
+      query = query
+        .distinctOn("books.id")
+        .whereIn("user_books.user_id", userIds)
+        .orderBy("books.id", "asc");
     } else {
       query = query.where("user_books.user_id", data.id);
     }
@@ -190,11 +201,24 @@ class UserBook {
     // Join the user_books table to the user table to get the list of users that have a added a book to library
     let query = knex<UserBookSchema>("user_books")
       .join<UserSchema>("users", "user_books.user_id", "users.id")
-      .select("users.*");
+      .select(
+        "users.id",
+        "users.email",
+        "users.password",
+        "users.full_name",
+        "users.password_reset_token",
+        "users.password_reset_expires",
+        "users.email_verified",
+        "users.created_at",
+        "users.updated_at"
+      );
     if (_.isArray(data)) {
       const bookIds = data.map((book) => book.id);
       //@ts-ignore
-      query = query.distinct("users.id").whereIn("user_books.book_id", bookIds);
+      query = query
+        .distinctOn("users.id")
+        .whereIn("user_books.book_id", bookIds)
+        .orderBy("users.id", "asc");
     } else {
       query = query.where("user_books.book_id", data.id);
     }
