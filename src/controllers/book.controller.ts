@@ -7,8 +7,11 @@ import {
 } from "../services/book.service";
 import { GetBookQuery, CreateBook, BookUpdate } from "../interfaces";
 import { AuthenticatedRequest } from "../interfaces";
+import Book from "../models/Book.model";
 import UserBook from "../models/UserBook.model";
 import RequestError from "../util/RequestError";
+import UserSuggestion from "../models/UserSuggestion.model";
+import {userSuggestionsByRating} from "../services/user.service";
 
 export const searchBooks = async (
   req: Request,
@@ -67,7 +70,7 @@ export const updateBook = async (
     }
     const userBook = await UserBook.fetchOne({
       user_id: req.user!.id,
-      id
+      id,
     });
 
     if (!userBook) {
@@ -95,3 +98,34 @@ export const deleteBook = async (
     next(error);
   }
 };
+
+export const bookRecommendations = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    let books = await UserSuggestion.fetchByUser(req.user!);
+    if(books.length === 0) {
+      books = await userSuggestionsByRating(req.user!);
+    }
+    res.json(books);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const findAllBooks = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const books = await Book.getByAvgRating();
+    res.json(books);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
