@@ -1,4 +1,4 @@
-import {object, string, ref} from 'yup';
+import {object, string} from 'yup';
 
 export const registerSchema = object({
     full_name: string().required('Full name is required'),

@@ -1,5 +1,5 @@
 import {Router} from 'express';
-import {searchBooks, create, findUserBooks, updateBook, deleteBook} from '../controllers/book.controller';
+import {searchBooks, create, findUserBooks, updateBook, deleteBook, bookRecommendations, findAllBooks} from '../controllers/book.controller';
 import validator from '../middlewares/validator';
 import isAuthenticated from '../middlewares/isAuthenticated';
 import { searchBookSchema, createBookSchema,  updateBookSchema} from '../validators/book.validator';
@@ -15,5 +15,10 @@ router.get('/', isAuthenticated, findUserBooks);
 router.put('/:id', isAuthenticated, validator(updateBookSchema), updateBook);
 
 router.delete('/:id', isAuthenticated, deleteBook);
+
+router.get('/all', findAllBooks);
+
+router.get('/suggestions', isAuthenticated, bookRecommendations);
+
 
 export default router;

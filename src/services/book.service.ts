@@ -99,7 +99,8 @@ export const addBookToUserLib = async (
     // Pick the required fields and save it to the database
     const bookData = {
       ..._.pick(data, ["description", "title"]),
-      cover_image: getBookImage(data.covers[0]),
+      // @ts-ignore
+      cover_image: getBookImage(_.first(_.pick(data, ["covers"]))),
       publication_year: first_publish_year,
       identifier: key,
     };
@@ -167,8 +168,9 @@ export const updateUserBook = async (
     book.rating = rating;
 
     setTimeout(() => {
-      updateUserSimilarity(user);
-      updateUserSuggestions(user);
+      updateUserSimilarity(user)
+        .then(() => updateUserSuggestions(user))
+        .catch((error) => console.log(error));
     }, 1000);
   }
   if (review) {
@@ -176,6 +178,7 @@ export const updateUserBook = async (
     book.review = review;
   }
   await book.save(...updates);
+  await book.book.getAvgRating();
   return book;
 };
 

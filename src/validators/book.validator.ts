@@ -28,7 +28,7 @@ export const createBookSchema = object({
 })
 
 export const updateBookSchema = object({
-    rating: string().when('review', {
+    rating: number().oneOf([0, 1, 2, 3, 4, 5], 'Rating should be a number from 0 - 5').when('review', {
         is: (key?: string) => Boolean(key) === true,
         then: (schema) => schema.optional(),
         otherwise: (schema) => schema.required('Add a rating for this book')
