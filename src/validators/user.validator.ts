@@ -1,4 +1,4 @@
-import {object, string, number} from 'yup';
+import {object, string} from 'yup';
 
 export const updateUserSchema = object({
     full_name: string().when('password', {is: (val: string | undefined) => Boolean(val),
@@ -10,4 +10,3 @@ export const updateUserSchema = object({
         return value === this.parent.password;
     }),
 })
-

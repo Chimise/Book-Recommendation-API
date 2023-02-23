@@ -35,4 +35,3 @@ export const updateBookSchema = object({
     }),
     review: string()
 })
-
