@@ -2,7 +2,7 @@
 
 This is a Node.js Express application for searching different books by title, author, subject using Open Library API, saving favorite books to personal library and adding rating and review to favorite books.
 
-One of it's major features is recommending books to users based on their previous ratings by relying on ratings of other users for similar books and computing a similariy index between the users using a variation of Jaccard index formula and recommending books based on this similariy index.
+One of it's major features is recommending books to users based on their previous ratings by relying on ratings of other users for similar books and computing a similariy index between the users using a variation of Jaccard index formula and recommending books based on this similariy index. It supports user authentication using auth and refresh tokens with email support.
 
 # Table of contents:
 
